@@ -1,0 +1,26 @@
+# Build Outputs & Dependencies
+**/build/
+**/dist/
+**/node_modules/
+target/
+
+# Bytecode & Runtime
+*.class
+*.log
+bin/
+
+# Environment & Sensitive Credentials
+*.env
+*.env.local
+
+# IDE & Tool Cache
+.classpath
+.npm
+.project
+.settings/
+.vite/
+.mvn/wrapper/maven-wrapper.jar
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
