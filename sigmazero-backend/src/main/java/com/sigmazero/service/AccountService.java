@@ -60,7 +60,7 @@ public class AccountService {
     public UUID getRequiredTenantId() {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new TenantNotFoundException("Missing required X-Tenant-ID header");
+            throw new TenantNotFoundException("Authenticated workspace could not be resolved");
         }
         return tenantId;
     }

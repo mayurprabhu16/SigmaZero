@@ -1,48 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api, { setApiTenantId } from './api';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 
-const TenantContext = createContext();
+const TenantContext = createContext(null);
 
 export const TenantProvider = ({ children }) => {
-  const [tenants, setTenants] = useState([]);
-  const [activeTenant, setActiveTenant] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchTenants = async () => {
+  const [activeTenant, setActiveTenant] = useState(() => {
     try {
-      const res = await api.get('/tenants');
-      setTenants(res.data);
-      if (res.data.length > 0 && !activeTenant) {
-        selectTenant(res.data[0]);
-      }
-    } catch (err) {
-      console.error('Failed to load tenants:', err);
-    } finally {
-      setLoading(false);
+      return JSON.parse(localStorage.getItem('sigmazero_session') || 'null')?.tenant || null;
+    } catch {
+      return null;
     }
-  };
+  });
 
-  const selectTenant = (tenant) => {
-    setActiveTenant(tenant);
-    setApiTenantId(tenant.id);
-  };
+  const selectTenant = (tenant) => setActiveTenant(tenant);
 
-  const createTenant = async (name) => {
-    const res = await api.post('/tenants', { name });
-    setTenants((prev) => [...prev, res.data]);
-    selectTenant(res.data);
-    return res.data;
-  };
+  const value = useMemo(() => ({
+    tenants: activeTenant ? [activeTenant] : [],
+    activeTenant,
+    selectTenant,
+    loading: false,
+  }), [activeTenant]);
 
-  useEffect(() => {
-    fetchTenants();
-  }, []);
-
-  return (
-    <TenantContext.Provider value={{ tenants, activeTenant, selectTenant, createTenant, loading }}>
-      {children}
-    </TenantContext.Provider>
-  );
+  return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 };
 
 export const useTenant = () => useContext(TenantContext);

@@ -1,6 +1,7 @@
 package com.sigmazero.exception;
 
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +13,26 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+            "timestamp", Instant.now(),
+            "status", HttpStatus.UNAUTHORIZED.value(),
+            "error", "Unauthorized",
+            "message", "Invalid email or password."
+        ));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+            "timestamp", Instant.now(),
+            "status", HttpStatus.BAD_REQUEST.value(),
+            "error", "Request Failed",
+            "message", ex.getMessage()
+        ));
+    }
 
     @ExceptionHandler(UnbalancedTransactionException.class)
     public ResponseEntity<Map<String, Object>> handleUnbalanced(UnbalancedTransactionException ex) {

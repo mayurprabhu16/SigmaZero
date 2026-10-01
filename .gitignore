@@ -1,2 +1,22 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
 
+# Node
+node_modules/
+dist/
+
+# Java / Maven
+target/
+*.class
+
+# IDE
 .metadata/
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

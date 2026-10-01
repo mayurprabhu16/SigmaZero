@@ -1,64 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, ArrowRight, Lock, User, Building, UserPlus, LogIn } from 'lucide-react';
-import { useTenant } from './TenantContext';
-import api, { setApiTenantId } from './api';
+import React, { useState } from 'react';
+import { Layers, ArrowRight, Lock, User, Building2, UserPlus, LogIn, ShieldCheck } from 'lucide-react';
+import api, { setApiToken } from './api';
+
+const defaultForm = { email: '', password: '', organizationName: '' };
 
 export const LoginPage = ({ onLoginSuccess }) => {
-  const { tenants, selectTenant, createTenant } = useTenant();
   const [mode, setMode] = useState('signin');
-  const [username, setUsername] = useState('admin@acme.corp');
-  const [password, setPassword] = useState('••••••••');
-  const [selectedTenantId, setSelectedTenantId] = useState('');
-  const [organizationName, setOrganizationName] = useState('');
+  const [form, setForm] = useState(defaultForm);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (tenants.length > 0 && !selectedTenantId) {
-      setSelectedTenantId(tenants[0].id);
-    }
-  }, [tenants, selectedTenantId]);
+  const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const handleSignIn = (e) => {
-    e.preventDefault();
-    setError(null);
-
-    const chosen = tenants.find((t) => t.id === selectedTenantId) || tenants[0];
-    if (!chosen) {
-      setError('Please choose or create an organization first.');
-      return;
-    }
-
-    selectTenant(chosen);
-    onLoginSuccess({ username, tenant: chosen });
-  };
-
-  const handleSignUp = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
-      const newTenant = await createTenant(organizationName);
-      selectTenant(newTenant);
-      setApiTenantId(newTenant.id);
-
-      const defaultAccounts = [
-        { code: '1000', name: 'Cash & Operational Bank', type: 'ASSET', currency: 'USD' },
-        { code: '1100', name: 'Accounts Receivable', type: 'ASSET', currency: 'USD' },
-        { code: '2000', name: 'Accounts Payable', type: 'LIABILITY', currency: 'USD' },
-        { code: '3000', name: 'Owner Equity', type: 'EQUITY', currency: 'USD' },
-        { code: '4000', name: 'Primary Revenue', type: 'REVENUE', currency: 'USD' },
-        { code: '5000', name: 'Operating Expense', type: 'EXPENSE', currency: 'USD' },
-      ];
-
-      for (const acc of defaultAccounts) {
-        await api.post('/accounts', acc);
-      }
-
-      onLoginSuccess({ username, tenant: newTenant });
+      const endpoint = mode === 'signin' ? '/auth/login' : '/auth/register';
+      const payload = mode === 'signin'
+        ? { email: form.email, password: form.password }
+        : form;
+      const { data } = await api.post(endpoint, payload);
+      setApiToken(data.token);
+      onLoginSuccess(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to initialize tenant workspace.');
+      setError(err.response?.data?.message || 'Authentication failed. Check your details and try again.');
     } finally {
       setLoading(false);
     }
@@ -66,142 +33,54 @@ export const LoginPage = ({ onLoginSuccess }) => {
 
   return (
     <div className="auth-wrapper">
-      <div className="auth-card">
+      <div className="auth-glow auth-glow-one" />
+      <div className="auth-glow auth-glow-two" />
+      <div className="auth-card auth-card-modern">
         <div className="auth-header">
-          <div className="auth-icon-badge">
-            <Layers size={24} />
-          </div>
+          <div className="auth-icon-badge"><Layers size={25} /></div>
+          <div className="auth-kicker"><ShieldCheck size={13} /> Secure Ledger Workspace</div>
           <h1 className="auth-title">SigmaZero</h1>
-          <p className="auth-subtitle">Zero-variance double-entry ledger platform</p>
+          <p className="auth-subtitle">Double-entry accounting with an immutable transaction journal.</p>
         </div>
 
         <div className="auth-tabs">
-          <button
-            type="button"
-            className={`auth-tab-btn ${mode === 'signin' ? 'active' : ''}`}
-            onClick={() => { setMode('signin'); setError(null); }}
-          >
-            <LogIn size={13} style={{ display: 'inline', marginRight: '6px' }} />
-            Sign In
+          <button type="button" className={`auth-tab-btn ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(null); }}>
+            <LogIn size={14} /> Sign In
           </button>
-          <button
-            type="button"
-            className={`auth-tab-btn ${mode === 'signup' ? 'active' : ''}`}
-            onClick={() => { setMode('signup'); setError(null); }}
-          >
-            <UserPlus size={13} style={{ display: 'inline', marginRight: '6px' }} />
-            Sign Up
+          <button type="button" className={`auth-tab-btn ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(null); }}>
+            <UserPlus size={14} /> Create Workspace
           </button>
         </div>
 
-        {error && (
-          <div className="alert-box" style={{ marginBottom: '1.25rem' }}>
-            <span>{error}</span>
+        {error && <div className="alert-box auth-error"><span>{error}</span></div>}
+
+        <form onSubmit={submit} className="auth-form">
+          {mode === 'signup' && (
+            <div className="form-group">
+              <label className="form-label"><Building2 size={13} /> Organization</label>
+              <input className="input-text" type="text" required maxLength="100" placeholder="e.g. Apex Global Corp" value={form.organizationName} onChange={(e) => update('organizationName', e.target.value)} />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label"><User size={13} /> Email address</label>
+            <input className="input-text" type="email" required placeholder="operator@company.com" value={form.email} onChange={(e) => update('email', e.target.value)} autoComplete="email" />
           </div>
-        )}
 
-        {mode === 'signin' ? (
-          <form onSubmit={handleSignIn} className="form-group" style={{ gap: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Building size={13} /> Target Tenant Workspace
-              </label>
-              <select
-                className="input-select"
-                value={selectedTenantId}
-                onChange={(e) => setSelectedTenantId(e.target.value)}
-                required
-              >
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="form-group">
+            <label className="form-label"><Lock size={13} /> Password</label>
+            <input className="input-text" type="password" required minLength="8" placeholder={mode === 'signup' ? 'At least 8 characters' : 'Enter your password'} value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <User size={13} /> Operator Email
-              </label>
-              <input
-                type="email"
-                className="input-text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="operator@entity.com"
-              />
-            </div>
+          <button type="submit" className="btn-auth" disabled={loading}>
+            <span>{loading ? 'Securing session...' : mode === 'signin' ? 'Sign in securely' : 'Create & provision ledger'}</span>
+            <ArrowRight size={16} />
+          </button>
+        </form>
 
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Lock size={13} /> Security Key
-              </label>
-              <input
-                type="password"
-                className="input-text"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <button type="submit" className="btn-auth">
-              <span>Authorize Session</span>
-              <ArrowRight size={16} />
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleSignUp} className="form-group" style={{ gap: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Building size={13} /> New Organization Name
-              </label>
-              <input
-                type="text"
-                className="input-text"
-                required
-                placeholder="e.g. Apex Global Corp"
-                value={organizationName}
-                onChange={(e) => setOrganizationName(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <User size={13} /> Admin Operator Email
-              </label>
-              <input
-                type="email"
-                className="input-text"
-                required
-                placeholder="founder@apexcorp.com"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Lock size={13} /> Password
-              </label>
-              <input
-                type="password"
-                className="input-text"
-                required
-                placeholder="Create password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <button type="submit" className="btn-auth" disabled={loading}>
-              <span>{loading ? 'Initializing Workspace...' : 'Register & Provision Ledger'}</span>
-              <ArrowRight size={16} />
-            </button>
-          </form>
-        )}
+        <div className="auth-security-note">
+          <Lock size={13} /> Passwords are stored as BCrypt hashes. Ledger APIs require an authenticated JWT session.
+        </div>
       </div>
     </div>
   );
