@@ -10,21 +10,43 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class TenantInterceptor implements HandlerInterceptor {
+
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public boolean preHandle(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler
+    ) {
+
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof AppUserPrincipal principal) {
-            TenantContext.setTenantId(principal.tenantId());
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication != null
+                && authentication.getPrincipal()
+                instanceof AppUserPrincipal principal) {
+
+            TenantContext.setTenantId(
+                    principal.tenantId()
+            );
         }
+
         return true;
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    public void afterCompletion(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler,
+            Exception ex
+    ) {
+
         TenantContext.clear();
     }
 }

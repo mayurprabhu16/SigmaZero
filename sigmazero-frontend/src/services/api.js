@@ -14,24 +14,40 @@ export const getStoredSession = () => {
 };
 
 export const setApiToken = (token) => {
-  if (token) localStorage.setItem('sigmazero_token', token);
-  else localStorage.removeItem('sigmazero_token');
+  if (token) {
+    localStorage.setItem('sigmazero_token', token);
+  } else {
+    localStorage.removeItem('sigmazero_token');
+  }
 };
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sigmazero_token') || getStoredSession()?.token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+api.interceptors.request.use(
+  (config) => {
+    const session = getStoredSession();
+    const token = localStorage.getItem('sigmazero_token') || session?.token;
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+
+    if ((status === 401 || status === 403) && !url.includes('/auth/')) {
       localStorage.removeItem('sigmazero_session');
       localStorage.removeItem('sigmazero_token');
       window.dispatchEvent(new Event('sigmazero:logout'));
     }
+
     return Promise.reject(error);
   }
 );

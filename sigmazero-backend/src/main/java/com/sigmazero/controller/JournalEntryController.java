@@ -16,16 +16,34 @@ import java.util.List;
 @RequestMapping("/api/journal-entries")
 @RequiredArgsConstructor
 public class JournalEntryController {
+
     private final LedgerPostingService postingService;
     private final JournalHistoryService historyService;
 
+    /**
+     * Get the complete transaction journal
+     * for the currently authenticated tenant.
+     */
     @GetMapping
     public ResponseEntity<List<JournalEntryResponse>> getJournalHistory() {
-        return ResponseEntity.ok(historyService.getJournalHistory());
+
+        return ResponseEntity.ok(
+                historyService.getJournalHistory()
+        );
     }
 
+    /**
+     * Post a new journal entry.
+     */
     @PostMapping
-    public ResponseEntity<JournalEntryResponse> postEntry(@Valid @RequestBody PostJournalEntryRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(postingService.postJournalEntry(request));
+    public ResponseEntity<JournalEntryResponse> postEntry(
+            @Valid @RequestBody PostJournalEntryRequest request
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(
+                        postingService.postJournalEntry(request)
+                );
     }
 }

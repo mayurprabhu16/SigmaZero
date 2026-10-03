@@ -7,11 +7,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
+
     @Autowired
     private TenantInterceptor tenantInterceptor;
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(
+            InterceptorRegistry registry
+    ) {
+
         registry.addInterceptor(tenantInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/**");

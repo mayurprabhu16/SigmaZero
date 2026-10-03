@@ -64,12 +64,14 @@ function MainApp() {
     setSession(data);
     localStorage.setItem('sigmazero_session', JSON.stringify(data));
     setApiToken(data.token);
+    window.dispatchEvent(new Event('sigmazero:session'));
   };
 
   const handleLogout = () => {
     setSession(null);
     localStorage.removeItem('sigmazero_session');
     setApiToken(null);
+    window.dispatchEvent(new Event('sigmazero:logout'));
   };
 
   if (!session?.token) return <LoginPage onLoginSuccess={handleLoginSuccess} />;

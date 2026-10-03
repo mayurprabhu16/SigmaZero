@@ -54,6 +54,7 @@ public class AuthService {
         return createResponse(user);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = request.email().trim().toLowerCase();
         Authentication authentication = authenticationManager.authenticate(

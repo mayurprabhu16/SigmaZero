@@ -21,23 +21,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
+
         String header = request.getHeader("Authorization");
+
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7).trim();
-            try {
-                Claims claims = jwtService.parse(token);
-                String email = claims.get("email", String.class);
-                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    var user = userDetailsService.loadUserByUsername(email);
-                    var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            if (!token.isBlank()) {
+                try {
+                    Claims claims = jwtService.parse(token);
+                    String email = claims.get("email", String.class);
+
+                    if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        AppUserPrincipal user = (AppUserPrincipal) userDetailsService.loadUserByUsername(email);
+
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        user,
+                                        null,
+                                        user.getAuthorities()
+                                );
+
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                } catch (Exception ignored) {
+                    // Invalid or expired JWT remains unauthenticated.
+                    // SecurityConfig's AuthenticationEntryPoint will return HTTP 401.
+                    SecurityContextHolder.clearContext();
                 }
-            } catch (Exception ignored) {
-                // Invalid/expired tokens remain unauthenticated and are rejected by Spring Security.
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }
